@@ -5,10 +5,10 @@ interface WordCellProps {
   word: string
   index: number
   isActive: boolean
-  progress: number
+  progress?: number  // Unused now, kept for compatibility
 }
 
-export function WordCell({ word, index, isActive, progress }: WordCellProps) {
+export function WordCell({ word, index, isActive }: WordCellProps) {
   return (
     <motion.div
       className={`${styles.cell} ${isActive ? styles.active : ''}`}
@@ -23,17 +23,6 @@ export function WordCell({ word, index, isActive, progress }: WordCellProps) {
     >
       <span className={styles.word}>{word}</span>
       <span className={styles.gridLabel}>Grid {index + 1}</span>
-
-      {isActive && (
-        <div className={styles.progressContainer}>
-          <motion.div
-            className={styles.progressBar}
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.016, ease: 'linear' }}
-          />
-        </div>
-      )}
     </motion.div>
   )
 }

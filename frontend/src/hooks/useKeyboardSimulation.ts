@@ -4,15 +4,15 @@ import { useClenchStore } from '../stores/useClenchStore'
 
 interface UseKeyboardSimulationOptions {
   enabled?: boolean
-  onAction?: (action: 'right' | 'down' | 'refresh') => void
+  onAction?: (action: 'right' | 'down' | 'select') => void
+  onSelect?: () => void  // Called when 3 is pressed (select)
 }
 
 export function useKeyboardSimulation(options: UseKeyboardSimulationOptions = {}) {
-  const { enabled = true, onAction } = options
+  const { enabled = true, onAction, onSelect } = options
 
   const moveRight = useGridStore((state) => state.moveRight)
   const moveDown = useGridStore((state) => state.moveDown)
-  const refreshGrid = useGridStore((state) => state.refreshGrid)
   const triggerClench = useClenchStore((state) => state.triggerClench)
 
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -39,12 +39,13 @@ export function useKeyboardSimulation(options: UseKeyboardSimulationOptions = {}
         break
 
       case '3':
+        // 3 clenches = select current word (or trigger refresh if on refresh button)
         triggerClench(3)
-        refreshGrid()
-        onAction?.('refresh')
+        onSelect?.()
+        onAction?.('select')
         break
     }
-  }, [enabled, moveRight, moveDown, refreshGrid, triggerClench, onAction])
+  }, [enabled, moveRight, moveDown, triggerClench, onAction, onSelect])
 
   useEffect(() => {
     if (!enabled) return
