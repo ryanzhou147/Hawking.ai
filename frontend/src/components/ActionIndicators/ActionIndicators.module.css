@@ -1,0 +1,31 @@
+.container {
+  display: flex;
+  gap: var(--space-8);
+  align-items: center;
+  justify-content: center;
+}
+
+.indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.light {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-text-muted);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.light.active {
+  border-color: var(--color-gold);
+}
+
+.label {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}

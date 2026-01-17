@@ -1,0 +1,1 @@
+export { CurrentSentence } from './CurrentSentence'

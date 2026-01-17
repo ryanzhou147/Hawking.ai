@@ -1,0 +1,68 @@
+/* Soft Monument Theme Tokens */
+:root {
+  /* Colors */
+  --color-porcelain: #FAFAF8;
+  --color-beige: #EFE9E2;
+  --color-beige-light: #F5F1EC;
+  --color-gold: #C9B78A;
+  --color-gold-light: #D4C9A3;
+  --color-gold-dark: #B5A476;
+  --color-text-primary: #2C2C2C;
+  --color-text-secondary: #6B6B6B;
+  --color-text-muted: #9A9A9A;
+  --color-divider: rgba(0, 0, 0, 0.1);
+  --color-divider-light: rgba(0, 0, 0, 0.05);
+
+  /* Typography */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Font sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* Border radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 20px rgba(201, 183, 138, 0.3);
+  --shadow-glow-strong: 0 0 30px rgba(201, 183, 138, 0.5);
+
+  /* Animation */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-select: 800ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.45, 0, 0.55, 1);
+
+  /* Layout */
+  --panel-left-width: 60%;
+  --panel-right-width: 40%;
+  --indicator-bar-height: 80px;
+  --grid-gap: 12px;
+  --cell-size: 100px;
+}
