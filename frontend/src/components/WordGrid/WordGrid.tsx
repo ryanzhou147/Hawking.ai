@@ -13,7 +13,6 @@ export function WordGrid({ onWordSelected, onRefresh }: WordGridProps) {
   const words = useGridStore((state) => state.words)
   const cursorPosition = useGridStore((state) => state.cursorPosition)
   const mode = useGridStore((state) => state.mode)
-  const isLoading = useGridStore((state) => state.isLoading)
   const isBackendConnected = useGridStore((state) => state.isBackendConnected)
 
   const { progress } = useAutoSelect({
@@ -54,7 +53,6 @@ export function WordGrid({ onWordSelected, onRefresh }: WordGridProps) {
         <span className={styles.modeLabel}>
           {mode === 'sentence-start' ? 'Start your sentence' : 'Continue...'}
         </span>
-        {isLoading && <span className={styles.loading}>Loading...</span>}
         {!isBackendConnected && (
           <span className={styles.offline}>Offline mode</span>
         )}

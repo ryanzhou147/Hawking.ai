@@ -19,10 +19,10 @@ export function IndicatorLight({ label, isActive, isFading }: IndicatorLightProp
             : 'inset 0 0 0px rgba(201, 183, 138, 0)',
           backgroundColor: isActive
             ? 'var(--color-gold-light)'
-            : 'transparent',
+            : 'var(--color-beige-light)',
           borderColor: isActive
             ? 'var(--color-gold)'
-            : 'var(--color-text-muted)'
+            : 'var(--color-beige)'
         }}
         transition={{
           duration: isFading ? 0.7 : 0.1,

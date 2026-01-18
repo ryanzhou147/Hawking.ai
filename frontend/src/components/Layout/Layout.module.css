@@ -12,23 +12,24 @@
 }
 
 .leftPanel {
-  width: var(--panel-left-width);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--space-8);
+  flex-shrink: 0;
 }
 
 .divider {
-  width: 1px;
+  flex: 0 0 12px;
   background-color: var(--color-divider);
+  cursor: col-resize;
 }
 
 .rightPanel {
-  width: var(--panel-right-width);
   display: flex;
   flex-direction: column;
   background-color: var(--color-beige-light);
+  flex-shrink: 0;
 }
 
 .bottomBar {

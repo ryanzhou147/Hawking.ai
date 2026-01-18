@@ -97,3 +97,57 @@ export async function checkHealth(): Promise<boolean> {
     return false
   }
 }
+
+export async function cloneVoiceFromFile(file: File): Promise<string> {
+  const formData = new FormData()
+  const name = file.name.replace(/\.[^/.]+$/, '') || 'user-voice'
+  formData.append('name', name)
+  formData.append('audio_file', file)
+
+  const response = await fetch(`${API_BASE_URL}/api/clone-voice`, {
+    method: 'POST',
+    body: formData
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to clone voice: ${response.statusText}`)
+  }
+
+  const data = await response.json()
+
+  if (!data.voice_id) {
+    throw new Error('Clone voice response did not include voice_id')
+  }
+
+  return data.voice_id as string
+}
+
+export async function setActiveVoice(voiceId: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/set-voice?voice_id=${encodeURIComponent(voiceId)}`, {
+    method: 'POST'
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to set active voice: ${response.statusText}`)
+  }
+}
+
+export async function speakSentence(text: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/speak-sentence`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ text }),
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to speak sentence: ${response.statusText}`)
+  }
+
+  const audioData = await response.arrayBuffer()
+  const blob = new Blob([audioData], { type: 'audio/mpeg' })
+  const url = URL.createObjectURL(blob)
+  const audio = new Audio(url)
+  audio.play().catch(() => {})
+}

@@ -50,7 +50,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: var(--color-porcelain);
+  background-color: var(--color-beige-light);
   border-radius: var(--radius-lg);
   cursor: default;
   user-select: none;
@@ -58,7 +58,7 @@
 }
 
 .cell:hover {
-  background-color: var(--color-beige-light);
+  background-color: var(--color-beige);
 }
 
 .cell.active {

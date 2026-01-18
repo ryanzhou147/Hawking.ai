@@ -22,7 +22,6 @@ export function WordCell({ word, index, isActive }: WordCellProps) {
       transition={{ duration: 0.15, ease: 'easeOut' }}
     >
       <span className={styles.word}>{word}</span>
-      <span className={styles.gridLabel}>Grid {index + 1}</span>
     </motion.div>
   )
 }
