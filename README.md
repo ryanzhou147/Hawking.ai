@@ -1,6 +1,6 @@
 # Nexhacks - Assistive Communication Interface
 
-An assistive communication system that enables users to communicate through biosignal gestures. The system uses AI-powered word prediction, real-time signal processing, and voice synthesis to help users build and speak sentences naturally.
+An assist,ive communication system that enables users to communicate through biosignal gestures. The system uses AI-powered word prediction, real-time signal processing, and voice synthesis to help users build and speak sentences naturally.
 
 ---
 
@@ -104,7 +104,7 @@ npm install
 
 ### 4. Signal Processing Setup (Optional)
 
-If using EEG/EMG hardware for biosignal detection:
+If using EEG/EMG hardware for jaw clench detection:
 
 ```bash
 cd Signal_Processing
@@ -134,7 +134,7 @@ npm run dev
 ### Start Signal Processing (Optional)
 
 ```bash
-# For biosignal detection (requires LSL stream)
+# For jaw clench detection (requires LSL stream)
 cd Signal_Processing
 python ClenchDetection.py
 
@@ -164,106 +164,69 @@ docker-compose up -d
 
 ## WoodWide AI - Numeric Reasoning for Biosignal Detection
 
-We leverage **[WoodWide AI's Numeric Reasoning API](https://woodwide.ai/)** for biosignal classification, combining **Anomaly Detection** and **Prediction** models to achieve accurate detection from extremely noisy EMG sensor data.
+We leverage **[WoodWide AI's Numeric Reasoning API](https://woodwide.ai/)** for biosignal classification, enabling accurate detection from noisy EMG sensor data without building custom ML pipelines.
 
-### WoodWide AI: 150-Word Explanation
+### Why We Chose the Predict Model
 
-Our biosignal data from OpenBCI is inherently noisy—especially during double-clench gestures where rapid muscle activations create erratic signal spikes that corrupt training data. WoodWide AI's **Anomaly Detection endpoint** (`POST /api/models/anomaly/train`) identifies these outliers automatically. We upload our raw CSV, train an anomaly model, and run inference to flag corrupted samples. These flagged rows are removed, producing a clean dataset.
+WoodWide AI offers four model types: **Predict**, **Cluster**, **Anomaly**, and **Embedding**. For our biosignal detection use case, we selected the **Prediction Model** because:
 
-With cleaned data, we train a **Prediction model** (`POST /api/models/prediction/train`) for binary classification (biosignal detected vs. not). WoodWide's numeric reasoning learns semantic patterns from our labeled data, producing accurate and interpretable outputs without manual threshold tuning.
+| Model Type | Use Case | Why Not For Us |
+|------------|----------|----------------|
+| **Predict** | Supervised classification/regression | **Best fit** - we have labeled training data |
+| Cluster | Unsupervised grouping | No ground truth labels needed, but we have them |
+| Anomaly | Outlier detection | Good for unknown patterns, but we know what we're looking for |
+| Embedding | Vector representations | Useful for similarity, not classification |
 
-This two-stage pipeline—anomaly detection for data cleaning, then prediction for classification—lets us focus on user experience rather than ML infrastructure. WoodWide's API-first design and reusable representation layer eliminate the need for custom model building or constant retuning as conditions change.
+Our biosignal detection is a **binary classification problem** (signal detected vs. not detected) with labeled training data, making WoodWide's Prediction endpoint the optimal choice.
 
----
+### How WoodWide AI Solves Our Challenges
 
-### Our Two-Model Approach
+#### 1. Eliminating False Positives
 
-WoodWide AI offers four model types: **Predict**, **Cluster**, **Anomaly**, and **Embedding**. We use **two** of them in sequence:
+Raw biosignal data from EMG sensors is notoriously noisy. Traditional threshold-based detection produces frequent false positives from:
+- Muscle artifacts from talking or swallowing
+- Electrical interference from nearby devices
+- Electrode movement and contact issues
 
-| Model Type | How We Use It |
-|------------|---------------|
-| **Anomaly** | Clean our dataset by detecting and removing outlier samples |
-| **Predict** | Classify biosignals after data has been cleaned |
+WoodWide AI's prediction model learns the **semantic context** of what constitutes a true biosignal by training on labeled examples. By conditioning on units, schemas, and constraints, it produces outputs that are **accurate, interpretable, and dependable** - distinguishing genuine signals from noise artifacts.
 
-### The Double-Clench Noise Problem
+#### 2. Handling Noisy Data
 
-Double-clench gestures are critical for our interface (they trigger "move down" navigation), but they produce extremely noisy signals:
+Instead of hand-tuning signal processing filters, we upload our raw CSV data to WoodWide and let the API build a **reusable representation layer**. This representation:
+- Adapts to individual user physiology
+- Maintains accuracy as conditions change
+- Eliminates the need for constant retuning
 
-- **Rapid muscle contractions** create overlapping EMG spikes
-- **Signal amplitude swings wildly** between the two clenches
-- **Electrode saturation** causes clipping artifacts
-- **Motion artifacts** from jaw movement corrupt readings
+#### 3. Focus on Technical Execution
 
-Training a classifier on this raw data produces unreliable results. We needed to clean the dataset first.
-
-### Stage 1: Anomaly Detection for Data Cleaning
-
-We use WoodWide's **Anomaly Detection** endpoint to identify corrupted samples:
-
-```
-1. POST /api/datasets                    → Upload raw OpenBCI CSV
-2. POST /api/models/anomaly/train        → Train anomaly detector
-3. GET  /api/models/{id}                 → Poll until COMPLETE
-4. POST /api/models/anomaly/{id}/infer   → Get anomaly scores per row
-5. Filter out rows with high anomaly scores
-```
-
-The anomaly model learns the normal distribution of our biosignal features and flags samples that deviate significantly—exactly the corrupted double-clench data we need to remove.
-
-### Stage 2: Prediction on Cleaned Data
-
-With outliers removed, we train a **Prediction model** on the cleaned dataset:
+WoodWide AI's **API-first design** means we don't build custom ML infrastructure. Our workflow:
 
 ```
-1. POST /api/datasets                      → Upload cleaned CSV
-2. POST /api/models/prediction/train       → Train classifier
-3. GET  /api/models/{id}                   → Poll until COMPLETE
-4. POST /api/models/prediction/{id}/infer  → Classify new signals
+1. POST /api/datasets          → Upload training CSV
+2. POST /api/models/prediction/train → Train prediction model
+3. GET  /api/models/{id}       → Poll until status = COMPLETE
+4. POST /api/models/prediction/{id}/infer → Run inference
 ```
 
-The prediction model now trains on high-quality data, producing **accurate, interpretable, and dependable** outputs.
+This lets us focus on the user experience and real-time signal handling while WoodWide handles the ML complexity.
 
-### Why This Approach Works
-
-| Challenge | WoodWide Solution |
-|-----------|-------------------|
-| Noisy double-clench data | Anomaly detection removes corrupted samples |
-| False positives | Prediction model learns true signal patterns |
-| Manual threshold tuning | Semantic reasoning adapts automatically |
-| Custom ML infrastructure | API-first design—no models to build |
-| Changing conditions | Reusable representation layer handles drift |
-
-### Integration Code
+### Integration Architecture
 
 ```python
-# Two-stage WoodWide AI pipeline
+# woodwide_client.py - Our WoodWide AI integration
 
 client = WoodWideClient(api_key=WOODWIDE_API_KEY)
 
-# === STAGE 1: ANOMALY DETECTION ===
-# Upload raw noisy data
-raw_dataset_id = client.upload_dataset("raw_openbci_data.csv", "raw_signals")
+# 1. Upload labeled training data
+dataset_id = client.upload_dataset("training_data.csv", "biosignal_training")
 
-# Train anomaly detector
-anomaly_model_id = client.train_anomaly_model("signal_anomaly_detector")
-client.wait_for_training()
+# 2. Train prediction model on 'is_clench' label column
+model_id = client.train_model("biosignal_detector", label_column="is_clench")
 
-# Get anomaly scores
-anomaly_results = client.detect_anomalies(raw_dataset_id)
+# 3. Wait for async training to complete
+client.wait_for_training(timeout=300)
 
-# Remove outliers (especially noisy double-clench samples)
-clean_data = remove_flagged_rows(raw_data, anomaly_results)
-clean_data.to_csv("cleaned_signals.csv")
-
-# === STAGE 2: PREDICTION ===
-# Upload cleaned data
-clean_dataset_id = client.upload_dataset("cleaned_signals.csv", "clean_signals")
-
-# Train prediction model
-predict_model_id = client.train_model("biosignal_classifier", label_column="is_signal")
-client.wait_for_training()
-
-# Run inference on new data
+# 4. Run inference on new data
 predictions = client.predict(inference_dataset_id)
 ```
 
