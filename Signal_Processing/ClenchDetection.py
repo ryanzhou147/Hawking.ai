@@ -3,12 +3,12 @@ import time
 import requests  # <--- NEW: Required for API calls
 from pylsl import StreamInlet, resolve_streams
 
-# <--- NEW: Configuration for the Flask Server
-API_URL = "http://127.0.0.1:5000/api/process"
+# Configuration for the Backend Server (FastAPI on port 8000)
+API_URL = "http://127.0.0.1:8000/api/signal"
 
 def send_signal(action_name):
     """
-    Sends the action to the Flask API.
+    Sends the action to the FastAPI backend on port 8000.
     Uses a short timeout to prevent blocking the data stream loop.
     """
     try:
