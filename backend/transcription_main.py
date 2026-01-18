@@ -98,13 +98,13 @@ async def clone_voice(name: str, audio_file: UploadFile = File(...)):
     Returns voice_id to use for TTS
     """
     try:
-        # Read the uploaded audio file
         audio_bytes = await audio_file.read()
-        
-        # Create a voice clone with ElevenLabs
-        voice = client.voices.clone(
+        buffer = io.BytesIO(audio_bytes)
+        buffer.name = audio_file.filename or f"{name}.mp3"
+
+        voice = client.voices.ivc.create(
             name=name,
-            files=[audio_bytes]
+            files=[buffer]
         )
         
         print(f"Voice cloned successfully: {voice.voice_id}")
@@ -136,6 +136,7 @@ async def text_to_speech(text: str, voice_id: str):
             text=text,
             model_id="eleven_monolingual_v1"
         )
+        
         
         # Collect audio chunks
         audio_bytes = b"".join(audio_generator)
