@@ -7,6 +7,7 @@ import asyncio
 import json
 import os
 from typing import List
+import base64
 
 # Connection manager to handle multiple WebSocket clients
 class ConnectionManager:
@@ -179,3 +180,101 @@ async def bci_commands(websocket: WebSocket):
     except Exception as e:
         print(f"BCI WebSocket error: {e}")
         await websocket.close()
+
+@app.post("/speak-sentence")
+async def speak_sentence(text: str, voice_id: str):
+    """
+    Receives a completed sentence and converts to speech using cloned voice
+    Returns audio file
+    """
+    try:
+        print(f"Speaking: '{text}' with voice_id: {voice_id}")
+        
+        # Generate speech using ElevenLabs
+        audio_generator = client.text_to_speech.convert(
+            voice_id=voice_id,
+            text=text,
+            model_id="eleven_monolingual_v1"
+        )
+        
+        # Collect audio chunks
+        audio_bytes = b"".join(audio_generator)
+        
+        # Return audio as streaming response
+        return StreamingResponse(
+            io.BytesIO(audio_bytes),
+            media_type="audio/mpeg",
+            headers={
+                "Content-Disposition": f"inline; filename=speech.mp3"
+            }
+        )
+        
+    except Exception as e:
+        print(f"TTS error: {e}")
+        return {"status": "error", "message": str(e)}
+
+@app.websocket("/ws/speak")
+async def speak_websocket(websocket: WebSocket):
+    """
+    WebSocket to receive sentences and return audio in real-time
+    """
+    await websocket.accept()
+    print("Speech client connected")
+    
+    try:
+        while True:
+            # Receive sentence data from partner's word selection system
+            data = await websocket.receive_text()
+            sentence_data = json.loads(data)
+            
+            text = sentence_data.get("text")
+            voice_id = sentence_data.get("voice_id", current_voice_id)
+
+            if not voice_id:
+              await websocket.send_text(json.dumps({"error": "No voice_id set"}))
+              continue            
+            print(f"Received sentence to speak: '{text}'")
+            
+            # Generate speech
+            audio_generator = client.text_to_speech.convert(
+                voice_id=voice_id,
+                text=text,
+                model_id="eleven_monolingual_v1"
+            )
+            
+            # Collect audio
+            audio_bytes = b"".join(audio_generator)
+            
+            # Send audio back as base64
+            import base64
+            audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+            
+            await websocket.send_text(json.dumps({
+                "audio": audio_base64,
+                "text": text
+            }))
+            
+    except WebSocketDisconnect:
+        print("Speech client disconnected")
+    except Exception as e:
+        print(f"Speech WebSocket error: {e}")
+
+# Global variable to store current user's voice_id
+current_voice_id = None
+
+@app.post("/set-voice")
+async def set_voice(voice_id: str):
+    """
+    Set the active voice for the current session
+    """
+    global current_voice_id
+    current_voice_id = voice_id
+    print(f"Active voice set to: {voice_id}")
+    return {"status": "success", "voice_id": voice_id}
+
+@app.get("/get-voice")
+async def get_voice():
+    """
+    Get the current active voice_id
+    """
+    return {"voice_id": current_voice_id}
