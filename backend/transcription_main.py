@@ -6,6 +6,27 @@ import io
 import asyncio
 import json
 import os
+from typing import List
+
+# Connection manager to handle multiple WebSocket clients
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []    
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+    
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+    
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(message)
+            except:
+                pass
+
+manager = ConnectionManager()
 
 app = FastAPI()
 
@@ -27,43 +48,47 @@ client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
 def read_root():
     return {"status": "NexHacks Transcription Service Running"}
 
-@app.websocket("/ws/transcribe")
-async def transcribe_audio(websocket: WebSocket):
+@app.websocket("/ws/bci")
+async def bci_commands(websocket: WebSocket):
+    """
+    Receives BCI commands and broadcasts to all frontend clients
+    """
     await websocket.accept()
-    print("Client connected for transcription")
+    print("BCI hardware connected")
     
     try:
-        # Use ElevenLabs Speech-to-Text streaming
-        async with client.speech_to_text.realtime() as stt:
+        while True:
+            data = await websocket.receive_text()
+            command_data = json.loads(data)
             
-            async def send_audio():
-                # Receive audio from frontend and send to ElevenLabs
-                try:
-                    while True:
-                        audio_chunk = await websocket.receive_bytes()
-                        await stt.input_stream.send(audio_chunk)
-                except WebSocketDisconnect:
-                    await stt.input_stream.close()
+            command = command_data.get("command")
+            print(f"BCI Command: {command}")
             
-            async def receive_transcripts():
-                # Receive transcripts from ElevenLabs and send to frontend
-                async for transcript in stt.output_stream:
-                    if transcript.text:
-                        print(f"Transcribed: {transcript.text}")
-                        await websocket.send_text(json.dumps({
-                            "text": transcript.text,
-                            "is_final": transcript.is_final
-                        }))
-            
-            # Run both tasks concurrently
-            import asyncio
-            await asyncio.gather(send_audio(), receive_transcripts())
+            # Broadcast to all connected frontends
+            await manager.broadcast(json.dumps({
+                "action": command,
+                "timestamp": command_data.get("timestamp")
+            }))
             
     except WebSocketDisconnect:
-        print("Client disconnected")
-    except Exception as e:
-        print(f"Error: {e}")
-        await websocket.close()
+        print("BCI hardware disconnected")
+
+
+@app.websocket("/ws/frontend")
+async def frontend_connection(websocket: WebSocket):
+    """
+    Frontend connects here to receive BCI commands
+    """
+    await manager.connect(websocket)
+    print("Frontend connected")
+    
+    try:
+        while True:
+            # Keep connection alive
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        print("Frontend disconnected")
 
 @app.post("/clone-voice")
 async def clone_voice(name: str, audio_file: UploadFile = File(...)):
@@ -123,3 +148,34 @@ async def text_to_speech(text: str, voice_id: str):
     except Exception as e:
         print(f"TTS error: {e}")
         return {"status": "error", "message": str(e)}
+
+@app.websocket("/ws/bci")
+async def bci_commands(websocket: WebSocket):
+    """
+    WebSocket endpoint to receive BCI commands from hardware team
+    and forward to frontend
+    """
+    await websocket.accept()
+    print("BCI client connected")
+    
+    try:
+        while True:
+            # Receive command from BCI hardware team
+            data = await websocket.receive_text()
+            command_data = json.loads(data)
+            
+            command = command_data.get("command")  # "right", "down", or "select"
+            
+            print(f"BCI Command received: {command}")
+            
+            # Forward command to frontend
+            await websocket.send_text(json.dumps({
+                "action": command,
+                "timestamp": command_data.get("timestamp", None)
+            }))
+            
+    except WebSocketDisconnect:
+        print("BCI client disconnected")
+    except Exception as e:
+        print(f"BCI WebSocket error: {e}")
+        await websocket.close()
