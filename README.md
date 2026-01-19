@@ -1,6 +1,6 @@
-# Nexhacks - Assistive Communication Interface
+# Hawking.ai - Assistive Communication Interface
 
-An assist,ive communication system that enables users to communicate through biosignal gestures. The system uses AI-powered word prediction, real-time signal processing, and voice synthesis to help users build and speak sentences naturally.
+An assistive communication system that enables users to communicate through biosignal gestures. The system uses AI-powered word prediction, real-time signal processing, and voice synthesis to help users build and speak sentences naturally.
 
 ---
 
